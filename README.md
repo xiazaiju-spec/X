@@ -6,8 +6,8 @@
 
 - 从 `config.yaml` 读取指数和自选股配置
 - A 股优先使用 AKShare 获取行情
-- 港股、美股优先使用 yfinance 获取行情
-- yfinance 被限流或无数据时，自动尝试 AKShare/Stooq 备用数据源
+- 港股、美股优先使用 Longbridge OpenAPI 获取行情
+- Longbridge 不可用时自动 fallback 到 yfinance，随后再尝试 AKShare/Stooq 备用数据源
 - 计算 MA5、MA10、MA20、MA60、RSI、MACD、成交量变化
 - 指数评分和个股评分，满分 100 分
 - 风控规则：跌破 MA20 扣分、跌破 MA60 标记高风险、弱指数环境限制个股建议
@@ -49,6 +49,10 @@ python main.py --once
 
 - `OPENAI_API_KEY`: 大模型 API Key
 - `OPENAI_BASE_URL`: 可选，自定义 OpenAI 兼容接口
+- `LONGBRIDGE_APP_KEY`: Longbridge OpenAPI App Key
+- `LONGBRIDGE_APP_SECRET`: Longbridge OpenAPI App Secret
+- `LONGBRIDGE_ACCESS_TOKEN`: Longbridge OpenAPI Access Token
+- `LONGBRIDGE_TRADE_ENABLED`: 默认 `false`，当前版本只接入行情，不实现下单
 - `TELEGRAM_BOT_TOKEN`、`TELEGRAM_CHAT_ID`: Telegram 推送
 - `SMTP_*`: 邮箱推送
 - `DATABASE_PATH`: SQLite 数据库路径

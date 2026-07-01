@@ -6,6 +6,9 @@ app:
 database:
   path: ${DATABASE_PATH:-data/stock_dashboard.db}
 
+longbridge:
+  trade_enabled: false
+
 scheduler:
   enabled: true
   cron: "0 18 * * mon-fri"
@@ -33,20 +36,40 @@ indices:
     symbol: sh000300
   - name: 恒生指数
     market: HK
-    provider: yfinance
+    provider: longbridge
     symbol: ^HSI
+    fallback_providers:
+      - provider: yfinance
+        symbol: ^HSI
+      - provider: akshare
+        symbol: ^HSI
   - name: 恒生科技指数
     market: HK
-    provider: yfinance
+    provider: longbridge
     symbol: ^HSTECH
+    fallback_providers:
+      - provider: yfinance
+        symbol: ^HSTECH
+      - provider: akshare
+        symbol: ^HSTECH
   - name: 纳斯达克
     market: US
-    provider: yfinance
+    provider: longbridge
     symbol: ^IXIC
+    fallback_providers:
+      - provider: yfinance
+        symbol: ^IXIC
+      - provider: stooq
+        symbol: ^IXIC
   - name: 标普500
     market: US
-    provider: yfinance
+    provider: longbridge
     symbol: ^GSPC
+    fallback_providers:
+      - provider: yfinance
+        symbol: ^GSPC
+      - provider: stooq
+        symbol: ^GSPC
 
 watchlist:
   - name: 贵州茅台
@@ -55,12 +78,24 @@ watchlist:
     symbol: "600519"
   - name: 腾讯控股
     market: HK
-    provider: yfinance
+    provider: longbridge
     symbol: 0700.HK
+    fallback_providers:
+      - provider: yfinance
+        symbol: 0700.HK
+      - provider: akshare
+        symbol: "00700"
   - name: Apple
     market: US
-    provider: yfinance
+    provider: longbridge
     symbol: AAPL
+    fallback_providers:
+      - provider: yfinance
+        symbol: AAPL
+      - provider: akshare
+        symbol: AAPL
+      - provider: stooq
+        symbol: AAPL
 
 notify:
   telegram:

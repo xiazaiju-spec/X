@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 from ai.llm_client import LLMClient
 from data_provider.akshare_provider import AKShareProvider
 from data_provider.base import MarketDataProvider
+from data_provider.longbridge_provider import LongbridgeProvider
 from data_provider.stooq_provider import StooqProvider
 from data_provider.yfinance_provider import YFinanceProvider
 from database.storage import SQLiteStorage
@@ -122,6 +123,7 @@ def analyze_stocks(
 def build_providers() -> dict[str, MarketDataProvider]:
     return {
         "akshare": AKShareProvider(),
+        "longbridge": LongbridgeProvider(),
         "stooq": StooqProvider(),
         "yfinance": YFinanceProvider(),
     }
@@ -186,12 +188,34 @@ def default_fallbacks(item: dict[str, Any]) -> list[dict[str, str]]:
     symbol = item.get("symbol", "")
     if market == "HK":
         akshare_symbol = symbol.replace(".HK", "").zfill(5) if symbol.endswith(".HK") else symbol
+        if item.get("provider") == "longbridge":
+            return [
+                {"provider": "yfinance", "symbol": symbol},
+                {"provider": "akshare", "symbol": akshare_symbol},
+                {"provider": "stooq", "symbol": symbol},
+            ]
         return [
+            {"provider": "longbridge", "symbol": symbol},
             {"provider": "akshare", "symbol": akshare_symbol},
             {"provider": "stooq", "symbol": symbol},
         ]
     if market == "US":
-        return [{"provider": "stooq", "symbol": symbol}]
+        if item.get("provider") == "longbridge":
+            return [
+                {"provider": "yfinance", "symbol": symbol},
+                {"provider": "akshare", "symbol": symbol},
+                {"provider": "stooq", "symbol": symbol},
+            ]
+        if symbol.startswith("^"):
+            return [
+                {"provider": "longbridge", "symbol": symbol},
+                {"provider": "stooq", "symbol": symbol},
+            ]
+        return [
+            {"provider": "longbridge", "symbol": symbol},
+            {"provider": "akshare", "symbol": symbol},
+            {"provider": "stooq", "symbol": symbol},
+        ]
     return []
 
 

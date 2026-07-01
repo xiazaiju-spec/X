@@ -10,7 +10,16 @@ def print_console_summary(payload: dict[str, Any]) -> None:
     for item in payload.get("indices", []):
         source = item.get("source_provider", "n/a")
         print(f"- {item['name']}({item['symbol']}): {item['score']} / 100, {item['recommendation']} [{source}]")
+        if source == "n/a":
+            _print_risk_flags(item)
     print("\nStocks:")
     for item in payload.get("stocks", []):
         source = item.get("source_provider", "n/a")
         print(f"- {item['name']}({item['symbol']}): {item['score']} / 100, {item['recommendation']} [{source}]")
+        if source == "n/a":
+            _print_risk_flags(item)
+
+
+def _print_risk_flags(item: dict[str, Any]) -> None:
+    for flag in item.get("risk_flags", []):
+        print(f"  error: {flag}")
