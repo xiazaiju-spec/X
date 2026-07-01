@@ -1,0 +1,69 @@
+app:
+  name: ai-stock-dashboard
+  timezone: Asia/Shanghai
+  report_dir: reports
+
+database:
+  path: ${DATABASE_PATH:-data/stock_dashboard.db}
+
+scheduler:
+  enabled: true
+  cron: "0 18 * * mon-fri"
+
+analysis:
+  lookback_days: 180
+  min_history_days: 80
+
+indices:
+  - name: 上证指数
+    market: CN
+    provider: akshare
+    symbol: sh000001
+  - name: 深证成指
+    market: CN
+    provider: akshare
+    symbol: sz399001
+  - name: 创业板指
+    market: CN
+    provider: akshare
+    symbol: sz399006
+  - name: 沪深300
+    market: CN
+    provider: akshare
+    symbol: sh000300
+  - name: 恒生指数
+    market: HK
+    provider: yfinance
+    symbol: ^HSI
+  - name: 恒生科技指数
+    market: HK
+    provider: yfinance
+    symbol: ^HSTECH
+  - name: 纳斯达克
+    market: US
+    provider: yfinance
+    symbol: ^IXIC
+  - name: 标普500
+    market: US
+    provider: yfinance
+    symbol: ^GSPC
+
+watchlist:
+  - name: 贵州茅台
+    market: CN
+    provider: akshare
+    symbol: "600519"
+  - name: 腾讯控股
+    market: HK
+    provider: yfinance
+    symbol: 0700.HK
+  - name: Apple
+    market: US
+    provider: yfinance
+    symbol: AAPL
+
+notify:
+  telegram:
+    enabled: ${TELEGRAM_ENABLED:-false}
+  email:
+    enabled: ${EMAIL_ENABLED:-false}
