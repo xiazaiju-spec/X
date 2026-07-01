@@ -7,6 +7,7 @@
 - 从 `config.yaml` 读取指数和自选股配置
 - A 股优先使用 AKShare 获取行情
 - 港股、美股优先使用 yfinance 获取行情
+- yfinance 被限流或无数据时，自动尝试 AKShare/Stooq 备用数据源
 - 计算 MA5、MA10、MA20、MA60、RSI、MACD、成交量变化
 - 指数评分和个股评分，满分 100 分
 - 风控规则：跌破 MA20 扣分、跌破 MA60 标记高风险、弱指数环境限制个股建议
@@ -72,6 +73,15 @@ Docker：
 
 ```bash
 docker compose up --build
+```
+
+服务器更新代码后重新部署：
+
+```bash
+git pull
+docker compose build --no-cache
+docker compose run --rm ai-stock-dashboard python main.py --once
+docker compose up -d --build
 ```
 
 ## 目录说明

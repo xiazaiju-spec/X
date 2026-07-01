@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 from ai.llm_client import LLMClient
 from data_provider.akshare_provider import AKShareProvider
 from data_provider.base import MarketDataProvider
+from data_provider.stooq_provider import StooqProvider
 from data_provider.yfinance_provider import YFinanceProvider
 from database.storage import SQLiteStorage
 from indicators.technical import add_technical_indicators
@@ -85,10 +86,12 @@ def analyze_indices(
     results = []
     for item in items:
         try:
-            provider = providers[item["provider"]]
-            df = provider.fetch_daily(item["symbol"], start, end)
+            df, source = fetch_with_fallback(item, providers, start, end)
             df = add_technical_indicators(df)
-            results.append(score_index(item["name"], item["symbol"], df))
+            result = score_index(item["name"], item["symbol"], df)
+            result["source_provider"] = source["provider"]
+            result["source_symbol"] = source["symbol"]
+            results.append(result)
         except Exception as exc:
             results.append(error_score(item, "index", exc))
     return results
@@ -104,11 +107,13 @@ def analyze_stocks(
     results = []
     for item in items:
         try:
-            provider = providers[item["provider"]]
-            df = provider.fetch_daily(item["symbol"], start, end)
+            df, source = fetch_with_fallback(item, providers, start, end)
             df = add_technical_indicators(df)
             market_score = market_score_by_market.get(item.get("market"))
-            results.append(score_stock(item["name"], item["symbol"], df, market_score=market_score))
+            result = score_stock(item["name"], item["symbol"], df, market_score=market_score)
+            result["source_provider"] = source["provider"]
+            result["source_symbol"] = source["symbol"]
+            results.append(result)
         except Exception as exc:
             results.append(error_score(item, "stock", exc))
     return results
@@ -117,8 +122,77 @@ def analyze_stocks(
 def build_providers() -> dict[str, MarketDataProvider]:
     return {
         "akshare": AKShareProvider(),
+        "stooq": StooqProvider(),
         "yfinance": YFinanceProvider(),
     }
+
+
+def fetch_with_fallback(
+    item: dict[str, Any],
+    providers: dict[str, MarketDataProvider],
+    start: date,
+    end: date,
+) -> tuple[Any, dict[str, str]]:
+    errors = []
+    for source in provider_candidates(item):
+        provider_name = source["provider"]
+        symbol = source["symbol"]
+        provider = providers.get(provider_name)
+        if provider is None:
+            errors.append(f"{provider_name}:{symbol}: provider not configured")
+            continue
+
+        try:
+            df = provider.fetch_daily(symbol, start, end)
+            if df.empty:
+                raise ValueError("empty data")
+            return df, source
+        except Exception as exc:
+            errors.append(f"{provider_name}:{symbol}: {exc}")
+
+    raise RuntimeError("All providers failed: " + " | ".join(errors))
+
+
+def provider_candidates(item: dict[str, Any]) -> list[dict[str, str]]:
+    candidates = [{"provider": item["provider"], "symbol": item["symbol"]}]
+    fallbacks = item.get("fallback_providers")
+    if fallbacks is None:
+        fallbacks = default_fallbacks(item)
+
+    for fallback in fallbacks:
+        if isinstance(fallback, str):
+            candidates.append({"provider": fallback, "symbol": item["symbol"]})
+        else:
+            candidates.append(
+                {
+                    "provider": fallback.get("provider", item["provider"]),
+                    "symbol": fallback.get("symbol", item["symbol"]),
+                }
+            )
+
+    deduped = []
+    seen = set()
+    for candidate in candidates:
+        key = (candidate["provider"], candidate["symbol"])
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(candidate)
+    return deduped
+
+
+def default_fallbacks(item: dict[str, Any]) -> list[dict[str, str]]:
+    market = item.get("market")
+    symbol = item.get("symbol", "")
+    if market == "HK":
+        akshare_symbol = symbol.replace(".HK", "").zfill(5) if symbol.endswith(".HK") else symbol
+        return [
+            {"provider": "akshare", "symbol": akshare_symbol},
+            {"provider": "stooq", "symbol": symbol},
+        ]
+    if market == "US":
+        return [{"provider": "stooq", "symbol": symbol}]
+    return []
 
 
 def average_market_scores(index_config: list[dict[str, Any]], index_scores: list[dict[str, Any]]) -> dict[str, int]:

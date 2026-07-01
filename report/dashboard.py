@@ -8,7 +8,9 @@ def print_console_summary(payload: dict[str, Any]) -> None:
     print(f"Run date: {payload.get('run_date')}")
     print("\nIndices:")
     for item in payload.get("indices", []):
-        print(f"- {item['name']}({item['symbol']}): {item['score']} / 100, {item['recommendation']}")
+        source = item.get("source_provider", "n/a")
+        print(f"- {item['name']}({item['symbol']}): {item['score']} / 100, {item['recommendation']} [{source}]")
     print("\nStocks:")
     for item in payload.get("stocks", []):
-        print(f"- {item['name']}({item['symbol']}): {item['score']} / 100, {item['recommendation']}")
+        source = item.get("source_provider", "n/a")
+        print(f"- {item['name']}({item['symbol']}): {item['score']} / 100, {item['recommendation']} [{source}]")
